@@ -1,8 +1,29 @@
 //Platform where the chat is originating from
-const config = JSON.parse(document.getElementById("chat-config").textContent);
-const platform = config.platform_id;
+const configElement = document.getElementById("chat-config");
+let platform = 'AKI';
+let username = 'AKI Admin';
+
+// console.log(configElement);
+if (configElement) {
+  try {
+    const config = JSON.parse(configElement.textContent || "{}");
+
+    platform = config.platform_id;
+    if(config.user_name !=='null'){
+        username = config.user_name;
+    }
+
+
+  } catch (error) {
+    console.error("Invalid JSON in #chat-config:", error);
+  }
+} else {
+  console.warn("#chat-config element not found on this page.");
+}
+
 
 const chatbotToggler = document.querySelector(".chatbot-toggler");
+// console.log(chatbotToggler);
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatbot = document.querySelector('.chatbot');
@@ -82,7 +103,8 @@ const handleChat = () => {
         credentials: 'include', // Keeps session cookies (important!)
         body: JSON.stringify({
             message: userMessage,
-            platform: platform // or any value relevant to your app
+            platform: platform, // or any value relevant to your app
+            username:username
         })
     })
     .then(response => {
@@ -177,6 +199,7 @@ function handleClick(event) {
 document.addEventListener('click', handleClick);
 
 chatbotToggler.addEventListener('click', function(event) {
+    // alert('hapa');
     event.stopPropagation(); // Prevent this click from propagating to the document listener
     // Toggle chatbot visibility here
     chatbot.classList.toggle('show-chatbot');

@@ -1,54 +1,33 @@
-import mysql from "mysql2";
+import pkg from "pg";
+import fs from "fs";
 import dotenv from "dotenv";
 import session from "express-session";
-import expressMySQLSession from "express-mysql-session";
 import connectPgSimple from "connect-pg-simple";
-import pkg from "pg";
 
-//load dotenv environment
 dotenv.config();
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+const { Pool } = pkg;
+const isProduction = process.env.NODE_ENV === "production";
+
+export const db = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: isProduction
+    ? { ca: fs.readFileSync("./certs/ca.pem").toString(), rejectUnauthorized: true }
+    : false,
+  max: 8,
 });
 
-// === Conditional session store setup ===
-let sessionStore;
-const MySQLStore = expressMySQLSession(session);
+db.on("error", (err) => {
+  console.error("Unexpected error on idle Postgres client", err);
+  process.exit(1);
+});
 
-if (process.env.NODE_ENV === "testing") {
-  // PostgreSQL (Render)
-  const { Pool } = pkg;
-  const pgSession = connectPgSimple(session);
+const PgSession = connectPgSimple(session);
 
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
+export const sessionStore = new PgSession({
+  pool: db,
+  tableName: "session",
+  createTableIfMissing: true,
+});
 
-  sessionStore = new pgSession({
-    pool,
-    tableName: "session",
-    createTableIfMissing: true,
-  });
-
-  console.log("Using PostgreSQL session store "+process.env.NODE_ENV);
-} else {
-  // MySQL (local dev and production)
-//   console.log(process.env.DB_NAME);
-  sessionStore = new MySQLStore({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "chatbot_db",
-    port: process.env.DB_PORT || 3306,
-  });
-
-  console.log("Using MySQL session store "+process.env.NODE_ENV);
-}
-
-export { db, sessionStore };
-
+console.log(`Using PostgreSQL (${process.env.NODE_ENV || "development"})`);

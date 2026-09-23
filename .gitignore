@@ -94,3 +94,5 @@ jspm_packages/
 
 # Windows files
 Thumbs.db
+
+/certs/ca.pem

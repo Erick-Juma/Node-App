@@ -1,41 +1,34 @@
-import {db} from '../config/db.js';
-import platformMapper from  '../config/platformMapper.js'
-
-let mysqlPromise;
-
-mysqlPromise = db.promise();
+import { db } from '../config/db.js';
+import platformMapper from '../config/platformMapper.js';
 
 export const getAllChatLogs = async () => {
-  const [rows] = await mysqlPromise.query('SELECT * FROM chatbot_logs');
+  const { rows } = await db.query('SELECT * FROM chatbot_logs');
   return rows;
 };
 
-//convert the project entries to lower case 
+// convert the project entries to lower case
 export const getChatLogByPlatform = async (id) => {
-  var convertedId = parseInt(id);
-const [rows] = await mysqlPromise.query(
-  'SELECT * FROM chatbot_logs WHERE LOWER(project) = ?',
-  [platformMapper.get(convertedId)]
-);
-
+  const convertedId = parseInt(id, 10);
+  const { rows } = await db.query(
+    'SELECT * FROM chatbot_logs WHERE LOWER(project) = $1',
+    [platformMapper.get(convertedId)]
+  );
   return rows;
 };
 
 export const createChatLog = async (message, user_id, project, remote_ip) => {
-  // Convert project to lowercase
   const lowerProject = project.toLowerCase();
 
-  const [result] = await mysqlPromise.query(
-    'INSERT INTO chatbot_logs (message, user_id, project, remote_ip) VALUES (?, ?, ?, ?)',
+  const { rows } = await db.query(
+    'INSERT INTO chatbot_logs (message, user_id, project, remote_ip) VALUES ($1, $2, $3, $4) RETURNING id',
     [message, user_id, lowerProject, remote_ip]
   );
 
-  return { id: result.insertId, message, user_id, project: lowerProject, remote_ip };
+  return { id: rows[0].id, message, user_id, project: lowerProject, remote_ip };
 };
 
-
 export const updateChatLog = async (id, name, email) => {
-  await mysqlPromise.query('UPDATE users SET name = ?, email = ? WHERE id = ?', [
+  await db.query('UPDATE users SET name = $1, email = $2 WHERE id = $3', [
     name,
     email,
     id,
@@ -44,6 +37,6 @@ export const updateChatLog = async (id, name, email) => {
 };
 
 export const deleteChatLog = async (id) => {
-  await mysqlPromise.query('DELETE FROM users WHERE id = ?', [id]);
+  await db.query('DELETE FROM users WHERE id = $1', [id]);
   return { message: 'User deleted successfully' };
 };

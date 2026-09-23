@@ -6,6 +6,7 @@ import cors from "cors";
 import session from "express-session";
 import { fileURLToPath } from "url";
 import { sessionStore } from './config/db.js';
+import { config } from './config/environment.js';
 
 //import routes
 import geminiRoutes from "./routes/gemini_routes/gemini.js";
@@ -13,6 +14,7 @@ import erevukaRoutes from "./routes/erevuka_routes/erevuka.js";
 import akiRoutes from "./routes/aki_routes/aki.js";
 import messageRoutes from "./routes/message.js";
 import userRoutes from './routes/userRoutes.js';
+import erevukaAssistantRoutes from './routes/erevuka_routes/erevukaAssistant.js';
 
 
 // Fix __dirname and __filename for ES Modules
@@ -26,21 +28,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // === CORS setup ===
-const allowedOrigins = [
-  "https://courses.erevuka.org",
-  "https://erevuka-chat.onrender.com",
-  "https://apps.courses.farwell-consultants.com",
-  "https://courses.farwell-consultants.com",
-  "https://courses.akinsure.com",
-  "https://apps.courses.akinsure.com",
-  "https://api.erevuka.org",
-  "http://localhost:1000",
-  "http://localhost:3000",
-];
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || config.allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -48,7 +39,6 @@ const corsOptions = {
   },
   credentials: true,
 };
-
 // === Middleware ===
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -81,6 +71,7 @@ app.use("/api", erevukaRoutes);
 app.use("/api", akiRoutes);
 app.use("/api", messageRoutes);
 app.use("/api", userRoutes);
+app.use("/api", erevukaAssistantRoutes);
 
 // === Root route ===
 app.get("/", (req, res) => {

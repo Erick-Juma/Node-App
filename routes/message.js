@@ -1,14 +1,7 @@
 import express from "express";
-import { db } from "../config/db.js";
-import { createChatLog } from "../models/chatLogModel.js"; // Use the model directly
+import { createChatLog } from "../models/chatLogModel.js";
 
 const router = express.Router();
-const isTesting = process.env.NODE_ENV === "testing";
-
-let mysqlPromise;
-if (!isTesting) {
-  mysqlPromise = db.promise(); // promise wrapper for MySQL
-}
 
 // === POST /api/saveMessage ===
 router.post("/saveMessage", async (req, res) => {
@@ -23,51 +16,12 @@ router.post("/saveMessage", async (req, res) => {
   }
 
   try {
-    let newLog;
+    const newLog = await createChatLog(message, sender, platform, ip);
 
-    if (isTesting) {
-      // === PostgreSQL ===
-      const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS chatbot_logs (
-          id SERIAL PRIMARY KEY,
-          message TEXT NOT NULL,
-          user_id TEXT NOT NULL,
-          project TEXT,
-          remote_ip TEXT,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-      `;
-      await db.query(createTableQuery);
-
-      // Insert using model function
-      newLog = await createChatLog(message, sender, platform, ip, "postgresql");
-
-      return res.status(200).json({
-        message: "Message saved successfully (PostgreSQL)",
-        data: newLog,
-      });
-    } else {
-      // === MySQL ===
-      const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS chatbot_logs (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          message TEXT NOT NULL,
-          user_id VARCHAR(255) NOT NULL,
-          project VARCHAR(255),
-          remote_ip VARCHAR(255),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `;
-      await mysqlPromise.query(createTableQuery);
-
-      // Insert using model function
-      newLog = await createChatLog(message, sender, platform, ip, "mysql");
-
-      return res.status(200).json({
-        message: "Message saved successfully (MySQL)",
-        data: newLog,
-      });
-    }
+    return res.status(200).json({
+      message: "Message saved successfully",
+      data: newLog,
+    });
   } catch (err) {
     console.error("Error saving message:", err);
     return res.status(500).json({ message: "Error saving message to database" });

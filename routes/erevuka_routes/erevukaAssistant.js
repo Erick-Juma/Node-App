@@ -1,13 +1,15 @@
 // routes/erevuka_routes/erevukaAssistant.js
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { db } from "../../config/db.js";
 import { getEmbedding } from "../../services/embeddings.js";
 import { generateAnswer } from "../../services/llm.js";
+import { chatLimiter } from "../../middleware/chatLimiter.js";
 
 const router = express.Router();
-const PROJECT = "erevuka"; // scopes this assistant to only Erevuka's articles
+const PROJECT = "erevuka";
 
-router.post("/chat/erevuka-assistant", async (req, res) => {
+router.post("/chat/erevuka-assistant", chatLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) {
     return res.status(400).json({ error: "Message is required." });

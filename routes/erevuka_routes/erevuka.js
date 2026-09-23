@@ -1,16 +1,8 @@
 import express from 'express'
-import rateLimit from 'express-rate-limit';
 import generateContent from './erevukaHandler.js';
-const router = express.Router();
+import { chatLimiter } from '../../middleware/chatLimiter.js';
 
-// Rate limiter setup - 10 requests per session per minute
-const chatLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute window
-  max: 1, // limit each session (req.sessionID) to 10 requests per minute
-  keyGenerator: (req) => req.sessionID, // Use session ID as the key for rate limiting
-  message: { error: "Too many requests from your session. Please slow down." },
-  statusCode: 429
-});
+const router = express.Router();
 
 // Apply rate limiter to the /chat/erevuka route
 router.post('/chat/erevuka', chatLimiter, generateContent);

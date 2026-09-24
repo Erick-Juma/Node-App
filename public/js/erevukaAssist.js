@@ -1,9 +1,18 @@
 
 const aiConfigElement = document.getElementById("assistant-config");
 
+if (!aiConfigElement) {
+    throw new Error("assistant-config element not found");
+}
+
 const aiConfigs = JSON.parse(aiConfigElement.textContent);
 
-const API_URL = 'http://localhost:3000/api/chat/erevuka-assistant';
+const API_URL = aiConfigs.api_url;
+
+console.log(aiConfigs);
+console.log("Platform:", aiConfigs.platform);
+console.log("Username:", aiConfigs.username);
+console.log("API URL:", API_URL);
 
 const $ = (id) => document.getElementById(id);
 const widget = $("aiWidget"), chat = $("aiChat"), launcher = $("aiLauncher");

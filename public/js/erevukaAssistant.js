@@ -1,4 +1,4 @@
-const chatbotToggler = document.querySelector(".chatbot-toggler");
+const chatbotToggler = document.querySelector(".assistant-toggler");
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatbot = document.querySelector(".chatbot");

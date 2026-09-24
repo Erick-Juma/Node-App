@@ -2,59 +2,447 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erevuka Project Assistant</title>
-    <link rel="stylesheet" href="./css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ask AI</title>
+
+  <style>
+    /* ===== Ask AI widget (all styles are prefixed .ai- so they won't clash with your site) ===== */
+
+    :root {
+      --ai-accent: #2563eb;
+      /* change this to match your brand */
+      --ai-bg: #ffffff;
+      --ai-ink: #1e293b;
+      --ai-muted: #64748b;
+      --ai-line: #e2e8f0;
+      --ai-bot: #f1f5f9;
+      /* response bubble */
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ai-accent: #3b82f6;
+        --ai-bg: #1a1d24;
+        --ai-ink: #e8eaf0;
+        --ai-muted: #98a1b3;
+        --ai-line: #2d323d;
+        --ai-bot: #262b35;
+      }
+    }
+
+    .ai-widget,
+    .ai-widget * {
+      box-sizing: border-box;
+    }
+
+    .ai-widget {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--ai-ink);
+    }
+
+    .ai-widget button {
+      font: inherit;
+      color: inherit;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .ai-widget button:focus-visible,
+    .ai-widget textarea:focus-visible {
+      outline: 2px solid var(--ai-accent);
+      outline-offset: 2px;
+    }
+
+    .ai-widget svg {
+      display: block;
+    }
+
+    /* ---------- Floating icon ---------- */
+    .ai-launcher {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 9998;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--ai-accent);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, .4);
+      transition: transform .2s ease, opacity .15s ease;
+    }
+
+    .ai-launcher:hover {
+      transform: scale(1.06);
+    }
+
+    .ai-widget.open .ai-launcher {
+      opacity: 0;
+      transform: scale(.7);
+      pointer-events: none;
+    }
+
+    /* ---------- Chat window ---------- */
+    .ai-chat {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 9999;
+      width: 380px;
+      height: min(560px, calc(100vh - 48px));
+      height: min(560px, calc(100dvh - 48px));
+      display: flex;
+      flex-direction: column;
+      background: var(--ai-bg);
+      border: 1px solid var(--ai-line);
+      border-radius: 18px;
+      box-shadow: 0 20px 50px -10px rgba(15, 23, 42, .35);
+      overflow: hidden;
+
+      transform-origin: 100% 100%;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px) scale(.94);
+      transition: opacity .18s ease, transform .22s ease, visibility 0s linear .22s,
+        width .25s ease, height .25s ease;
+    }
+
+    .ai-widget.open .ai-chat {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      transition-delay: 0s;
+    }
+
+    /* Maximized */
+    .ai-chat.max {
+      width: min(900px, calc(100vw - 48px));
+      height: calc(100vh - 48px);
+      height: calc(100dvh - 48px);
+    }
+
+    /* ---------- Header ---------- */
+    .ai-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 10px 12px 14px;
+      border-bottom: 1px solid var(--ai-line);
+    }
+
+    .ai-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--ai-accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex: none;
+    }
+
+    .ai-title {
+      flex: 1;
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .ai-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--ai-muted);
+    }
+
+    .ai-icon-btn:hover {
+      background: var(--ai-bot);
+      color: var(--ai-ink);
+    }
+
+    .ai-restore {
+      display: none;
+    }
+
+    .ai-chat.max .ai-expand {
+      display: none;
+    }
+
+    .ai-chat.max .ai-restore {
+      display: block;
+    }
+
+    /* ---------- Messages ---------- */
+    .ai-messages {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ai-empty {
+      margin: auto;
+      text-align: center;
+      color: var(--ai-muted);
+      padding: 0 20px;
+    }
+
+    .ai-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .ai-row.user {
+      justify-content: flex-end;
+    }
+
+    .ai-row .ai-avatar {
+      width: 26px;
+      height: 26px;
+    }
+
+    .ai-bubble {
+      max-width: 80%;
+      padding: 9px 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .ai-chat.max .ai-bubble {
+      max-width: 70%;
+    }
+
+    /* You: accent colour, right side */
+    .ai-row.user .ai-bubble {
+      background: var(--ai-accent);
+      color: #fff;
+      border-radius: 18px 18px 4px 18px;
+    }
+
+    /* AI: grey, left side, with avatar */
+    .ai-row.bot .ai-bubble {
+      background: var(--ai-bot);
+      border-radius: 18px 18px 18px 4px;
+    }
+
+    .ai-row.bot.error .ai-bubble {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .ai-row.bot.error .ai-bubble {
+        background: #3a1c1c;
+        color: #fca5a5;
+      }
+    }
+
+    /* Thinking dots */
+    .ai-dots {
+      display: flex;
+      gap: 4px;
+      padding: 6px 2px;
+    }
+
+    .ai-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ai-muted);
+      animation: ai-bounce 1.2s infinite ease-in-out;
+    }
+
+    .ai-dots span:nth-child(2) {
+      animation-delay: .15s;
+    }
+
+    .ai-dots span:nth-child(3) {
+      animation-delay: .3s;
+    }
+
+    @keyframes ai-bounce {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+        opacity: .4;
+      }
+
+      30% {
+        transform: translateY(-5px);
+        opacity: 1;
+      }
+    }
+
+    /* ---------- Input ---------- */
+    .ai-input {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--ai-line);
+    }
+
+    .ai-input textarea {
+      flex: 1;
+      min-width: 0;
+      height: 40px;
+      max-height: 120px;
+      resize: none;
+      padding: 9px 12px;
+      border: 1px solid var(--ai-line);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--ai-ink);
+      font: inherit;
+      line-height: 1.4;
+    }
+
+    .ai-input textarea::placeholder {
+      color: var(--ai-muted);
+    }
+
+    .ai-input textarea:focus {
+      outline: none;
+      border-color: var(--ai-accent);
+    }
+
+    .ai-send {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--ai-accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex: none;
+    }
+
+    .ai-send:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    /* ---------- Phones: full screen ---------- */
+    @media (max-width: 520px) {
+
+      .ai-chat,
+      .ai-chat.max {
+        inset: 0;
+        width: auto;
+        height: auto;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .ai-expand,
+      .ai-restore {
+        display: none !important;
+      }
+
+      .ai-input textarea {
+        font-size: 16px;
+      }
+
+      .ai-launcher {
+        right: 16px;
+        bottom: 16px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ai-widget * {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-    <div class="main">
+  <div class="ai-widget" id="aiWidget">
 
-        <div class="title-container">
-            <h1>Erevuka Project Assistant</h1>
-        </div>
+    <!-- Floating icon -->
+    <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Ask AI">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />
+      </svg>
+    </button>
 
-        <button class="chatbot-toggler">Platform Assistant</button>
+    <!-- Chat window -->
+    <section class="ai-chat" id="aiChat" role="dialog" aria-label="Ask AI" inert>
 
-        <div class="chatbot">
-            <header>
-                <h2>
-                    <button class="close-btn" aria-label="Close chat">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <path d="M6 6l12 12M18 6L6 18" />
-                        </svg>
-                    </button>
-                    <button id="maximize-btn" aria-label="Maximize chat">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="4" y="4" width="16" height="16" rx="2" />
-                        </svg>
-                    </button>
-                </h2>
-            </header>
-            <ul class="chatbox">
-                <li class="chat incoming">
-                    <span>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                            <path d="M12 2a1 1 0 0 1 1 1v1.06A6 6 0 0 1 18 10v1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-1H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2v-1a6 6 0 0 1 5-5.92V3a1 1 0 0 1 1-1zm-3 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
-                        </svg>
-                    </span>
-                    <p>Hi! Ask me anything about the Erevuka project.</p>
-                </li>
-            </ul>
-            <div class="chat-input">
-                <textarea placeholder="Ask about Erevuka..." spellcheck="false"></textarea>
-                <button id="send-btn" aria-label="Send message">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M3 11l18-8-8 18-2-8-8-2z" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
+      <header class="ai-header">
+        <span class="ai-avatar" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.5l2 6.2 6.2 2-6.2 2-2 6.3-2-6.3-6.2-2 6.2-2z" />
+          </svg>
+        </span>
+        <h2 class="ai-title">AI Assistant</h2>
 
-    <script src="./js/erevukaAssistant.js"></script>
+        <!-- Maximize -->
+        <button class="ai-icon-btn ai-expand" id="aiExpand" type="button" aria-label="Maximize" title="Maximize">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+          </svg>
+        </button>
+        <!-- Restore size -->
+        <button class="ai-icon-btn ai-restore" id="aiRestore" type="button" aria-label="Restore size"
+          title="Restore size">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 10l7-7M14 10V4M14 10h6M10 14l-7 7M10 14v6M10 14H4" />
+          </svg>
+        </button>
+        <!-- Minimize -->
+        <button class="ai-icon-btn" id="aiMinimize" type="button" aria-label="Minimize" title="Minimize">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
+            <path d="M5 12h14" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="ai-messages" id="aiMessages" role="log" aria-live="polite">
+        <div class="ai-empty" id="aiEmpty">Ask questions related to Erevuka only.</div>
+      </div>
+
+      <div class="ai-input">
+        <textarea id="aiInput" rows="1" placeholder="Type your prompt here..." aria-label="Your question"></textarea>
+        <button class="ai-send" id="aiSend" type="button" aria-label="Send" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+        </button>
+      </div>
+
+    </section>
+  </div>
+    <script id="assistant-config" type="application/json">
+    {
+        "platform": "Chat application",
+        "username": "Admin Chatbot"
+    }
+    </script>
+  <script src="./js/erevukaAssist.js"></script>
 
 </body>
 

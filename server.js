@@ -13,7 +13,7 @@ import geminiRoutes from "./routes/gemini_routes/gemini.js";
 import erevukaRoutes from "./routes/erevuka_routes/erevuka.js";
 import akiRoutes from "./routes/aki_routes/aki.js";
 import messageRoutes from "./routes/message.js";
-import userRoutes from './routes/userRoutes.js';
+import userRoutes from './routes/chatRoutes.js';
 import erevukaAssistantRoutes from './routes/erevuka_routes/erevukaAssistant.js';
 
 

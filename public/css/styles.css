@@ -8,7 +8,7 @@
 }
 
 body {
-    background-color: #0CB2C8;
+    background-color: transparent;
     height: 100vh;
 }
 
@@ -50,6 +50,24 @@ body {
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 }
 
+.assistant-toggler {
+    position: fixed;
+    bottom: 30px;
+    right: 35px;
+    outline: none;
+    border: none;
+    color: white;
+    height: 50px;
+    width: 50px;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #ed1e79;
+    transition: all 0.2s ease;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
 
 
 body.show-chatbot .chatbot-toggler {

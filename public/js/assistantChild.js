@@ -1,18 +1,14 @@
 
-const aiConfigElement = document.getElementById("assistant-config");
+const aiConfigs = window.assistantConfig;
 
-if (!aiConfigElement) {
-    throw new Error("assistant-config element not found");
-}
-
-const aiConfigs = JSON.parse(aiConfigElement.textContent);
+console.log(aiConfigs);
 
 const API_URL = aiConfigs.api_url;
 
-console.log(aiConfigs);
-console.log("Platform:", aiConfigs.platform);
-console.log("Username:", aiConfigs.username);
-console.log("API URL:", API_URL);
+// console.log(aiConfigs);
+// console.log("Platform:", aiConfigs.platform);
+// console.log("Username:", aiConfigs.username);
+// console.log("API URL:", API_URL);
 
 const $ = (id) => document.getElementById(id);
 const widget = $("aiWidget"), chat = $("aiChat"), launcher = $("aiLauncher");

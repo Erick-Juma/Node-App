@@ -16,15 +16,15 @@ export const getChatLogByPlatform = async (id) => {
   return rows;
 };
 
-export const createChatLog = async (message, user_id, project, remote_ip) => {
+export const createChatLog = async (message, user_id, project, remote_ip, course_id = null, course = null) => {
   const lowerProject = project.toLowerCase();
 
   const { rows } = await db.query(
-    'INSERT INTO chatbot_logs (message, user_id, project, remote_ip) VALUES ($1, $2, $3, $4) RETURNING id',
-    [message, user_id, lowerProject, remote_ip]
+    'INSERT INTO chatbot_logs (message, user_id, project, remote_ip, course_id, course) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+    [message, user_id, lowerProject, remote_ip, course_id, course]
   );
 
-  return { id: rows[0].id, message, user_id, project: lowerProject, remote_ip };
+  return { id: rows[0].id, message, user_id, project: lowerProject, remote_ip, course_id, course };
 };
 
 export const updateChatLog = async (id, name, email) => {

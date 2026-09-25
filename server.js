@@ -15,6 +15,7 @@ import akiRoutes from "./routes/aki_routes/aki.js";
 import messageRoutes from "./routes/message.js";
 import userRoutes from './routes/chatRoutes.js';
 import erevukaAssistantRoutes from './routes/erevuka_routes/erevukaAssistant.js';
+import ingestRoutes from "./routes/ingest_routes/ingest.js";
 
 
 // Fix __dirname and __filename for ES Modules
@@ -72,6 +73,7 @@ app.use("/api", akiRoutes);
 app.use("/api", messageRoutes);
 app.use("/api", userRoutes);
 app.use("/api", erevukaAssistantRoutes);
+app.use("/api", ingestRoutes);
 
 // === Root route ===
 app.get("/", (req, res) => {

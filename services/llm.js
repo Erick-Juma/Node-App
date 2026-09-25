@@ -10,7 +10,7 @@ export async function generateAnswer({ systemPrompt, context, question }) {
   const prompt = `${systemPrompt}\n\nContext:\n${context}\n\nQuestion: ${question}\nAssistant:`;
 
   const result = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3.8-flash",
     contents: prompt,
   });
 

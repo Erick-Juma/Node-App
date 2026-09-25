@@ -5,7 +5,7 @@ const router = express.Router();
 
 // === POST /api/saveMessage ===
 router.post("/saveMessage", async (req, res) => {
-  const { message, platform } = req.body;
+  const { message, platform, username } = req.body;
   const sender = req.sessionID;
 
   let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
@@ -16,7 +16,7 @@ router.post("/saveMessage", async (req, res) => {
   }
 
   try {
-    const newLog = await createChatLog(message, sender, platform, ip);
+    const newLog = await createChatLog(message, username, platform, ip);
 
     return res.status(200).json({
       message: "Message saved successfully",

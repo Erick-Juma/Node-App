@@ -3,6 +3,7 @@ const configElement = document.getElementById("chat-config");
 let platform = 'AKI';
 let username = 'AKI Admin';
 
+
 if (configElement) {
   try {
     const config = JSON.parse(configElement.textContent || "{}");
@@ -23,8 +24,13 @@ const chatbox = document.querySelector(".chatbox");
 const chatbot = document.querySelector('.chatbot');
 const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
+const chatUser = document.getElementById("chat-user");
+const chatPlatform = document.getElementById("chat-platform");
+const chatCourse = document.getElementById("chat-course");
+const chatCourseId = document.getElementById("chat-course_id");
 const maximizeBtn = document.getElementById("maximize-btn");
 const inputInitHeight = chatInput.scrollHeight;
+
 
 let isSending = false; // simple lock to prevent duplicate sends
 
@@ -92,7 +98,13 @@ const handleChat = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ message: userMessage, platform, username }),
+      body: JSON.stringify({
+        message: userMessage,
+        platform: platform, // or any value relevant to your app
+        username: username,
+        course: chatCourse?.value ?? null,
+        course_id: chatCourseId?.value ?? null,
+      }),
     });
 
     if (response.status === 429) {

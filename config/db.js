@@ -12,7 +12,7 @@ const isProduction = process.env.NODE_ENV === "production";
 export const db = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isProduction
-    ? { ca: fs.readFileSync("./certs/ca.pem").toString(), rejectUnauthorized: true }
+    ? { ca: process.env.DATABASE_CA_CERT, rejectUnauthorized: true }
     : false,
   max: 8,
 });

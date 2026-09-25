@@ -10,11 +10,11 @@ const { Pool } = pkg;
 const isProduction = process.env.NODE_ENV === "production";
 
 export const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isProduction
-    ? { ca: process.env.DATABASE_CA_CERT, rejectUnauthorized: true }
-    : false,
-  max: 8,
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false,
+    },
+    max: 8,
 });
 
 db.on("error", (err) => {

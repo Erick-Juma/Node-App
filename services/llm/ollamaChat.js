@@ -18,6 +18,8 @@ Assistant:`;
 
     console.log("OLLAMA PROMPT:");
     console.log(prompt);
+    console.log(process.env.LLM_PROVIDER);
+    console.log(process.env.EMBEDDING_PROVIDER);
     console.log("PROMPT LENGTH:", prompt.length);
 
     const response = await fetch(`${OLLAMA_URL}/api/generate`, {

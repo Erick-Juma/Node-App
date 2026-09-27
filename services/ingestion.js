@@ -1,6 +1,6 @@
 // services/ingestion.js
 import { db } from "../config/db.js";
-import { getEmbedding } from "./embeddings.js";
+import { generateEmbedding } from "../services/embedding/index.js";
 
 function stripHtml(html) {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -43,7 +43,7 @@ export async function ingestArticle({ id, title, body, project }) {
 
   for (const chunk of chunks) {
     const contextualChunk = `${title}\n\n${chunk}`;
-    const embedding = await getEmbedding(contextualChunk, "RETRIEVAL_DOCUMENT");
+    const embedding = await generateEmbedding(contextualChunk, "RETRIEVAL_DOCUMENT");
 
     await db.query(
       "INSERT INTO knowledge_chunks (article_id, chunk_text, embedding, project) VALUES ($1, $2, $3, $4)",

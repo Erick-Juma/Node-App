@@ -21,11 +21,23 @@ const sessionId = (window.crypto && crypto.randomUUID)
     : Date.now() + "-" + Math.random().toString(36).slice(2);
 
 /* Open / minimize / maximize */
+function handleOutsideClick(e) {
+    if (!widget.contains(e.target) && !launcher.contains(e.target)) {
+        setOpen(false);
+    }
+}
+
 function setOpen(open) {
     widget.classList.toggle("open", open);
     chat.inert = !open;
     launcher.inert = open;
-    if (open) input.focus(); else launcher.focus();
+    if (open) {
+        input.focus();
+        document.addEventListener("click", handleOutsideClick);
+    } else {
+        launcher.focus();
+        document.removeEventListener("click", handleOutsideClick);
+    }
 }
 function setMax(max) { chat.classList.toggle("max", max); }
 

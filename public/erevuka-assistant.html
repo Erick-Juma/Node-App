@@ -10,7 +10,7 @@
         /* ===== Ask AI widget (all styles are prefixed .ai- so they won't clash with your site) ===== */
 
         :root {
-            --ai-accent: #2563eb;
+            --ai-accent: #23245f;
             /* change this to match your brand */
             --ai-bg: #ffffff;
             --ai-ink: #1e293b;
@@ -20,9 +20,13 @@
             /* response bubble */
         }
 
+        .chat-icon-button {
+            color: #ffffff;
+        }
+
         @media (prefers-color-scheme: dark) {
             :root {
-                --ai-accent: #3b82f6;
+                --ai-accent: #23245f;
                 --ai-bg: #1a1d24;
                 --ai-ink: #e8eaf0;
                 --ai-muted: #98a1b3;
@@ -75,7 +79,7 @@
             place-items: center;
             background: var(--ai-accent);
             color: #fff;
-            box-shadow: 0 6px 20px rgba(37, 99, 235, .4);
+            box-shadow: 0 6px 20px rgba(35, 36, 95, .4);
             transition: transform .2s ease, opacity .15s ease;
         }
 
@@ -294,7 +298,7 @@
             align-items: flex-end;
             gap: 8px;
             padding: 10px 12px 12px;
-            border-top: 1px solid var(--ai-line);
+            background: var(--ai-accent);
         }
 
         .ai-input textarea {
@@ -304,9 +308,9 @@
             max-height: 120px;
             resize: none;
             padding: 9px 12px;
-            border: 1px solid var(--ai-line);
+            border: 1px solid transparent;
             border-radius: 12px;
-            background: transparent;
+            background: #ffffff;
             color: var(--ai-ink);
             font: inherit;
             line-height: 1.4;
@@ -318,18 +322,22 @@
 
         .ai-input textarea:focus {
             outline: none;
-            border-color: var(--ai-accent);
+            border-color: #ffffff;
         }
 
         .ai-send {
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: var(--ai-accent);
-            color: #fff;
+            background: #ffffff;
+            color: var(--ai-accent);
             display: grid;
             place-items: center;
             flex: none;
+        }
+
+        .ai-send .chat-icon-button {
+            color: var(--ai-accent);
         }
 
         .ai-send:disabled {
@@ -379,10 +387,12 @@
 
         <!-- Floating icon -->
         <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Ask AI">
+            <span class="chat-icon-button">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />
             </svg>
+            </span>
         </button>
 
         <!-- Chat window -->
@@ -429,10 +439,13 @@
                 <textarea id="aiInput" rows="1" placeholder="Type your prompt here..."
                     aria-label="Your question"></textarea>
                 <button class="ai-send" id="aiSend" type="button" aria-label="Send" disabled>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                <span class="chat-icon-button">
+                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 19V5M5 12l7-7 7 7" />
-                    </svg>
+                    </svg>             
+                </span>
+  
                 </button>
             </div>
 

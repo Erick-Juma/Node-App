@@ -87,14 +87,14 @@ body.show-chatbot .chatbot-toggler {
     width: 15px;
 }
 
-.chatbot-toggler span:last-child,
+/* .chatbot-toggler span:last-child,
 body.show-chatbot .chatbot-toggler span:first-child  {
     opacity: 0;
 }
 
 body.show-chatbot .chatbot-toggler span:last-child {
     opacity: 1;
-}
+} */
 
 .chatbot {
     position: fixed;

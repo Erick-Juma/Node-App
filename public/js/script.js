@@ -1,14 +1,14 @@
-// Platform where the chat is originating from
-const configElement = document.getElementById("chat-config");
-let platform = 'AKI';
-let username = 'AKI Admin';
+// ---------- Config (platform/user identity for this embed) ----------
 
+const configElement = document.getElementById("chat-config");
+let platform = "AKI";
+let username = "AKI Admin";
 
 if (configElement) {
   try {
     const config = JSON.parse(configElement.textContent || "{}");
     platform = config.platform_id ?? platform;
-    if (config.user_name != null && config.user_name !== 'null') {
+    if (config.user_name != null && config.user_name !== "null") {
       username = config.user_name;
     }
   } catch (error) {
@@ -18,10 +18,12 @@ if (configElement) {
   console.warn("#chat-config element not found on this page.");
 }
 
+// ---------- DOM references ----------
+
 const chatbotToggler = document.querySelector(".chatbot-toggler");
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
-const chatbot = document.querySelector('.chatbot');
+const chatbot = document.querySelector(".chatbot");
 const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
 const chatUser = document.getElementById("chat-user");
@@ -31,18 +33,25 @@ const chatCourseId = document.getElementById("chat-course_id");
 const maximizeBtn = document.getElementById("maximize-btn");
 const inputInitHeight = chatInput.scrollHeight;
 
+let isSending = false; // prevents duplicate sends while a request is in flight
 
-let isSending = false; // simple lock to prevent duplicate sends
+// Shared avatar markup for incoming messages (matches the header/hero avatar)
+const AVATAR_SVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5C4 4.67 4.67 4 5.5 4h13c.83 0 1.5.67 1.5 1.5v10c0 .83-.67 1.5-1.5 1.5H9l-4 3.5v-3.5h-.5C3.67 16 3 15.33 3 14.5v-9C3 4.67 3.67 4 4.5 4" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+
+// ---------- Message rendering ----------
 
 const createChatLi = (message, className) => {
   const chatLi = document.createElement("li");
   chatLi.classList.add("chat", className);
-  chatLi.innerHTML = className === "outgoing"
-    ? `<p></p>`
-    : `<span><img src="https://img.icons8.com/?size=256&id=37410&format=png" alt=""></span><p></p>`;
+  chatLi.innerHTML =
+    className === "outgoing"
+      ? `<p></p>`
+      : `<span class="avatar">${AVATAR_SVG}</span><p></p>`;
   chatLi.querySelector("p").textContent = message;
   return chatLi;
 };
+
+// ---------- API calls ----------
 
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
@@ -50,9 +59,9 @@ const generateResponse = async (chatElement, userMessage) => {
 
   try {
     const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ message: userMessage }),
     });
 
@@ -70,7 +79,7 @@ const generateResponse = async (chatElement, userMessage) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Unexpected server error');
+      throw new Error(errorData.error || "Unexpected server error");
     }
 
     const data = await response.json();
@@ -95,12 +104,12 @@ const handleChat = async () => {
 
   try {
     const response = await fetch(MSG_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         message: userMessage,
-        platform: platform, // or any value relevant to your app
+        platform: platform,
         username: username,
         course: chatCourse?.value ?? null,
         course_id: chatCourseId?.value ?? null,
@@ -109,13 +118,15 @@ const handleChat = async () => {
 
     if (response.status === 429) {
       chatInput.value = "";
-      chatbox.appendChild(createChatLi("Too many requests. Please slow down and try again later.", "incoming"));
+      chatbox.appendChild(
+        createChatLi("Too many requests. Please slow down and try again later.", "incoming")
+      );
       return;
     }
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || 'Unexpected server error');
+      throw new Error(data.error || "Unexpected server error");
     }
 
     // UI updates
@@ -125,14 +136,13 @@ const handleChat = async () => {
     chatbox.scrollTo(0, chatbox.scrollHeight);
 
     setTimeout(() => {
-      const incomingChatLi = createChatLi("generating responses...", "incoming");
+      const incomingChatLi = createChatLi("Generating response…", "incoming");
       chatbox.appendChild(incomingChatLi);
       chatbox.scrollTo(0, chatbox.scrollHeight);
       generateResponse(incomingChatLi, userMessage);
     }, 600);
-
   } catch (error) {
-    console.error('Error saving message:', error);
+    console.error("Error saving message:", error);
     chatInput.value = "";
     chatbox.appendChild(createChatLi("Oops! Something went wrong. Please try again.", "incoming"));
   } finally {
@@ -140,6 +150,8 @@ const handleChat = async () => {
     sendChatBtn.style.pointerEvents = "auto";
   }
 };
+
+// ---------- Input behavior ----------
 
 chatInput.addEventListener("input", () => {
   chatInput.style.height = `${inputInitHeight}px`;
@@ -153,16 +165,17 @@ chatInput.addEventListener("keydown", (e) => {
   }
 });
 
+// ---------- Open / close / maximize ----------
+
 function handleClick(event) {
   if (!chatbot.contains(event.target)) {
     document.body.classList.remove("show-chatbot");
   }
 }
 
-document.addEventListener('click', handleClick);
+document.addEventListener("click", handleClick);
 
-// Single toggler listener — one source of truth (body class)
-chatbotToggler.addEventListener('click', (event) => {
+chatbotToggler.addEventListener("click", (event) => {
   event.stopPropagation();
   document.body.classList.toggle("show-chatbot");
 });
@@ -171,11 +184,8 @@ sendChatBtn.addEventListener("click", handleChat);
 
 closeBtn.addEventListener("click", () => {
   document.body.classList.remove("show-chatbot", "maximize-chatbot");
-  maximizeBtn.textContent = "🗖";
 });
 
 maximizeBtn.addEventListener("click", () => {
   document.body.classList.toggle("maximize-chatbot");
-  const isMaximized = document.body.classList.contains("maximize-chatbot");
-  maximizeBtn.textContent = isMaximized ? "🗕" : "🗖";
 });

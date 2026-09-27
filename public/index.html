@@ -5,8 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Erevuka Chat</title>
-
-    <!-- Style CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="./css/styles.css">
 </head>
 
@@ -14,29 +17,75 @@
 
     <div class="main">
 
-        <button class="chatbot-toggler">Ask AI</button>
+        <button class="chatbot-toggler" aria-label="Open Erevuka assistant">
+            <!-- <span class="toggler-dot" aria-hidden="true"></span> -->
+            <!-- <svg class="toggler-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                    d="M4 5.5C4 4.67 4.67 4 5.5 4h13c.83 0 1.5.67 1.5 1.5v10c0 .83-.67 1.5-1.5 1.5H9l-4 3.5v-3.5h-.5C3.67 16 3 15.33 3 14.5v-9C3 4.67 3.67 4 4.5 4"
+                    stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                <circle cx="8.3" cy="10" r="1" fill="currentColor" />
+                <circle cx="12" cy="10" r="1" fill="currentColor" />
+                <circle cx="15.7" cy="10" r="1" fill="currentColor" />
+            </svg> -->
+            <span class="toggler-label">Ask AI</span>
+        </button>
 
         <div class="chatbot">
             <header>
-                <h2>
-                    <span class="close-btn"> X</span>
-                    <span id="maximize-btn">🗖</span>
-                </h2>
+                <div class="header-identity">
+                    <span class="header-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M4 5.5C4 4.67 4.67 4 5.5 4h13c.83 0 1.5.67 1.5 1.5v10c0 .83-.67 1.5-1.5 1.5H9l-4 3.5v-3.5h-.5C3.67 16 3 15.33 3 14.5v-9C3 4.67 3.67 4 4.5 4"
+                                stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                    <div class="header-text">
+                        <h2>Ask AI</h2>
+                        <!-- <p><span class="presence-dot" aria-hidden="true"></span>Online</p> -->
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="maximize-btn" aria-label="Maximize chat">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M9 4H4v5M15 20h5v-5M20 4h-5M4 15v5" stroke="currentColor" stroke-width="1.7"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="close-btn" aria-label="Close chat">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.7"
+                                stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
             </header>
+
             <ul class="chatbox">
                 <li class="chat incoming">
-                    <span><img src="https://img.icons8.com/?size=256&id=37410&format=png" alt=""></span>
+                    <span class="avatar">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M4 5.5C4 4.67 4.67 4 5.5 4h13c.83 0 1.5.67 1.5 1.5v10c0 .83-.67 1.5-1.5 1.5H9l-4 3.5v-3.5h-.5C3.67 16 3 15.33 3 14.5v-9C3 4.67 3.67 4 4.5 4"
+                                stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                        </svg>
+                    </span>
                     <p>Hi there! How can I assist you today?</p>
                 </li>
             </ul>
+
             <div class="chat-input">
-                <textarea placeholder="Enter a message..." spellcheck="false"></textarea>
-                <span id="send-btn"><img src="/images/arrow-image.png" alt=""></span>
+                <textarea placeholder="Enter a message…" spellcheck="false"></textarea>
+                <span id="send-btn" aria-label="Send message">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 12l16-7-6.5 16-2.5-6.5L4 12z" stroke="currentColor" stroke-width="1.6"
+                            stroke-linejoin="round" stroke-linecap="round" />
+                    </svg>
+                </span>
             </div>
         </div>
     </div>
 
-    <!-- Chat config data (kept separate from the script that consumes it) -->
     <script id="chat-config" type="application/json">
     {
         "platform_id": "Chat application",
@@ -44,9 +93,382 @@
     }
     </script>
 
-    <!-- Script JS -->
     <script src="./js/script.js"></script>
 
 </body>
+
+<style>
+    :root {
+        --ink: #14171f;
+        --ink-soft: #4b5163;
+        --paper: #ffffff;
+        --mist: #eef1f6;
+        --border: #e1e5ee;
+        --indigo: #23245f;
+        --indigo-dark: #17183f;
+        --signal: #16b999;
+        --radius-panel: 16px;
+        --radius-bubble: 12px;
+        --font-head: "Sora", sans-serif;
+        --font-body: "Inter", sans-serif;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: var(--font-body);
+        color: var(--ink);
+    }
+
+    .main {
+        position: relative;
+    }
+
+    /* ---------- Launcher ---------- */
+
+    .chatbot-toggler {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 30px;
+        background: var(--indigo);
+        color: var(--paper);
+        border: none;
+        border-radius: 999px;
+        font-family: var(--font-head);
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(35, 36, 95, 0.28);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        z-index: 1000;
+    }
+
+    .chatbot-toggler:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(35, 36, 95, 0.34);
+    }
+
+    .chatbot-toggler:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 3px;
+    }
+
+    .toggler-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .toggler-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--signal);
+        position: absolute;
+        top: 9px;
+        right: 14px;
+        box-shadow: 0 0 0 2px var(--indigo);
+        animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.45;
+        }
+    }
+
+    body.show-chatbot .chatbot-toggler {
+        display: none;
+    }
+
+    /* ---------- Panel ---------- */
+
+    .chatbot {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        width: 372px;
+        max-width: calc(100vw - 32px);
+        height: min(600px, calc(100vh - 56px));
+        background: var(--paper);
+        border-radius: var(--radius-panel);
+        border: 1px solid var(--border);
+        box-shadow: 0 24px 60px rgba(20, 23, 31, 0.18);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(16px) scale(0.97);
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        z-index: 1000;
+    }
+
+    body.show-chatbot .chatbot {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    body.maximize-chatbot .chatbot {
+        width: min(480px, calc(100vw - 32px));
+        height: calc(100vh - 56px);
+    }
+
+    @media (max-width: 480px) {
+        .chatbot {
+            right: 16px;
+            bottom: 16px;
+            width: calc(100vw - 32px);
+        }
+
+        .chatbot-toggler {
+            right: 16px;
+            bottom: 16px;
+        }
+    }
+
+    /* ---------- Header ---------- */
+
+    header {
+        background: var(--ink);
+        color: var(--paper);
+        padding: 16px 14px 16px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+
+    .header-identity {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .header-avatar svg {
+        width: 18px;
+        height: 18px;
+        color: var(--paper);
+    }
+
+    .header-text h2 {
+        font-family: var(--font-head);
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .header-text p {
+        margin: 2px 0 0;
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.68);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .presence-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--signal);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .header-actions button {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.85);
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .header-actions button svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .header-actions button:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .header-actions button:focus-visible {
+        outline: 2px solid var(--paper);
+        outline-offset: 1px;
+    }
+
+    /* ---------- Messages ---------- */
+
+    .chatbox {
+        list-style: none;
+        margin: 0;
+        padding: 18px 16px;
+        flex: 1;
+        overflow-y: auto;
+        background: var(--mist);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .chat {
+        display: flex;
+        gap: 8px;
+        max-width: 100%;
+    }
+
+    .chat.outgoing {
+        justify-content: flex-end;
+    }
+
+    .chat .avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--indigo);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        align-self: flex-end;
+    }
+
+    .chat .avatar svg {
+        width: 14px;
+        height: 14px;
+        color: var(--paper);
+    }
+
+    .chat p {
+        margin: 0;
+        padding: 10px 13px;
+        border-radius: var(--radius-bubble);
+        font-size: 14px;
+        line-height: 1.5;
+        max-width: 78%;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .chat.incoming p {
+        background: var(--paper);
+        border: 1px solid var(--border);
+        border-bottom-left-radius: 4px;
+    }
+
+    .chat.outgoing p {
+        background: var(--indigo);
+        color: var(--paper);
+        border-bottom-right-radius: 4px;
+    }
+
+    .chat.incoming p.error {
+        background: #fdecea;
+        border-color: #f3b7b2;
+        color: #9c2b21;
+    }
+
+    /* ---------- Input ---------- */
+
+    .chat-input {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding: 12px;
+        border-top: 1px solid var(--border);
+        background: var(--paper);
+        flex-shrink: 0;
+    }
+
+    .chat-input textarea {
+        flex: 1;
+        resize: none;
+        max-height: 120px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--ink);
+        outline: none;
+        transition: border-color 0.15s ease;
+    }
+
+    .chat-input textarea:focus {
+        border-color: var(--indigo);
+    }
+
+    .chat-input textarea::placeholder {
+        color: #9098ab;
+    }
+
+    #send-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--indigo);
+        color: var(--paper);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.15s ease;
+    }
+
+    #send-btn svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    #send-btn:hover {
+        background: var(--indigo-dark);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+        .chatbot-toggler,
+        .chatbot,
+        .toggler-dot {
+            transition: none;
+            animation: none;
+        }
+    }
+</style>
 
 </html>

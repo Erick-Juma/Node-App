@@ -6,8 +6,21 @@ import { chatLimiter } from '../../middleware/chatLimiter.js';
 
 const router = express.Router();
 
-// Apply rate limiter to /chat/aki route
-router.post('/chat/aki', chatLimiter, generateOllamaContent);
+const LLM_PROVIDER = process.env.LLM_PROVIDER || 'gemini';
 
-// Export router as default (required for ESM import)
+const providers = {
+    ollama: generateOllamaContent,
+    gemini: generateContent,
+};
+
+const handler = providers[LLM_PROVIDER];
+
+if (!handler) {
+    throw new Error(
+        `Unknown LLM_PROVIDER "${LLM_PROVIDER}". Expected one of: ${Object.keys(providers).join(', ')}`
+    );
+}
+
+router.post('/chat/aki', chatLimiter, handler);
+
 export default router;

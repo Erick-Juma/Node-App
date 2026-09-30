@@ -3,18 +3,17 @@ import fs from "fs";
 import dotenv from "dotenv";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 
 dotenv.config();
 
 const { Pool } = pkg;
 const isProduction = process.env.NODE_ENV === "production";
 
-export const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false,
-    },
-    max: 8,
+export const db = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
+  max: 8,
 });
 
 db.on("error", (err) => {

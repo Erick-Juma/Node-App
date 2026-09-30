@@ -273,7 +273,6 @@ header h2 {
 
 body.maximize-chatbot .chatbot {
   position: fixed;
-  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 90vw;           /* or any fixed value like 600px */

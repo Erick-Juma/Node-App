@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { db } from "../config/db.js";
 import { generateEmbedding } from "../services/embedding/index.js";
 
-const MODEL_TAG = `${process.env.EMBEDDING_PROVIDER || "ollama"}/${process.env.EMBEDDING_MODEL || "nomic-embed-text"}`;
+const MODEL_TAG = `${process.env.EMBEDDING_PROVIDER || "ollama"}/${process.env.EMBEDDING_MODEL || "ollama"}`;
 const EMBED_BATCH = 5; // concurrent embedding calls
 const MAX_CHUNK = 800;
 // Bump when you change chunking or stripHtml so everything re-ingests

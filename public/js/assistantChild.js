@@ -21,7 +21,15 @@
     // Widget markup missing on this page: do nothing rather than throw
     if (!widget || !chat || !launcher || !messages || !input || !send) return;
 
+    // Topic elements (optional: pages without topic markup keep working as before)
+    const topicBar = byId("aiTopicBar");
+    const topicLabel = byId("aiTopicLabel");
+    const changeTopicBtn = byId("aiChangeTopic");
+    const topicsEnabled = !!(topicBar && topicLabel && changeTopicBtn);
+
     let busy = false;
+    let currentTopic = null; // topic id as a string, or null = all topics
+    let topicChosen = !topicsEnabled; // if there is no topic UI, chatting is allowed straight away
 
     /* Conversation memory lives in the page and is sent with each question for context */
     const MAX_HISTORY = 20; // last 20 messages (10 back-and-forths)
@@ -45,7 +53,12 @@
         chat.inert = !open;
         launcher.inert = open;
         if (open) {
-            input.focus();
+            if (topicChosen) {
+                input.focus();
+            } else {
+                // input is disabled until a topic is picked, so focus the first topic instead
+                widget.querySelector(".ai-topic-btn")?.focus();
+            }
             document.addEventListener("click", handleOutsideClick);
         } else {
             launcher.focus();
@@ -88,7 +101,7 @@
     function updateInput() {
         input.style.height = "40px";
         input.style.height = Math.min(input.scrollHeight, 120) + "px";
-        send.disabled = busy || !input.value.trim();
+        send.disabled = busy || !topicChosen || !input.value.trim();
     }
 
     input.addEventListener("input", updateInput);
@@ -100,10 +113,53 @@
     });
     send.addEventListener("click", ask);
 
+    /* ---------- Topics ---------- */
+    function lockInput() {
+        input.disabled = true;
+        input.value = "";
+        input.placeholder = "Choose a topic first";
+        updateInput();
+    }
+
+    if (topicsEnabled) {
+        lockInput();
+
+        widget.querySelectorAll(".ai-topic-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                currentTopic = btn.dataset.topic || null;
+                topicChosen = true;
+                topicLabel.textContent = btn.dataset.name;
+                topicBar.hidden = false;
+                if (empty) empty.hidden = true;
+                input.disabled = false;
+                input.placeholder = "Ask about " + btn.dataset.name.toLowerCase() + "…";
+                updateInput();
+                input.focus();
+            });
+        });
+
+        changeTopicBtn.addEventListener("click", () => {
+            if (busy) return; // don't wipe the chat while a reply is loading
+
+            // remove chat bubbles but keep #aiEmpty in the DOM
+            [...messages.children].forEach((el) => {
+                if (el !== empty) el.remove();
+            });
+
+            chatHistory = []; // old answers belong to the old topic
+            currentTopic = null;
+            topicChosen = false;
+            topicBar.hidden = true;
+            if (empty) empty.hidden = false;
+            lockInput();
+            widget.querySelector(".ai-topic-btn")?.focus();
+        });
+    }
+
     /* ---------- Ask ---------- */
     async function ask() {
         const prompt = input.value.trim();
-        if (!prompt || busy) return;
+        if (!prompt || busy || !topicChosen) return;
 
         busy = true;
         addMessage("user", prompt);
@@ -126,6 +182,7 @@
                 body: JSON.stringify({
                     message: prompt, // what /api/chat/erevuka-assistant reads
                     prompt, // kept for any backend that still expects `prompt`
+                    topic: currentTopic, // topic id as a string, or null for all topics
                     history: chatHistory,
                     sessionId,
                     aiConfigs,

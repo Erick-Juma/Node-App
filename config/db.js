@@ -17,7 +17,7 @@ export const db = new pg.Pool({
 });
 
 db.on("error", (err) => {
-  console.error("Unexpected error on idle Postgres client", err);
+  // console.error("Unexpected error on idle Postgres client", err);
   process.exit(1);
 });
 
@@ -29,4 +29,4 @@ export const sessionStore = new PgSession({
   createTableIfMissing: true,
 });
 
-console.log(`Using PostgreSQL (${process.env.NODE_ENV || "development"})`);
+// console.log(`Using PostgreSQL (${process.env.NODE_ENV || "development"})`);

@@ -12,14 +12,14 @@ function requireIngestKey(req, res, next) {
 }
 
 router.post("/ingest/article", requireIngestKey, async (req, res) => {
-  const { id, title, body, project } = req.body;
+  const { id, title, body, topic, project } = req.body;
 
-  if (!id || !title || !body || !project) {
-    return res.status(400).json({ error: "id, title, body, and project are required." });
+  if (!id || !title || !body || !project || !topic) {
+    return res.status(400).json({ error: "id, title, topic, body, and project are required." });
   }
 
   try {
-    const result = await ingestArticle({ id, title, body, project });
+    const result = await ingestArticle({ id, title, body, topic, project });
     return res.status(200).json({ message: "Article ingested", ...result });
   } catch (err) {
     console.error("Error ingesting article:", err);

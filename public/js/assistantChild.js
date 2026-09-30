@@ -113,6 +113,23 @@
     });
     send.addEventListener("click", ask);
 
+    function selectTopic(id, name) {
+        currentTopic = id || null;
+        topicChosen = true;
+        topicLabel.textContent = name;
+        topicBar.hidden = false;
+        if (empty) empty.hidden = true;
+        input.disabled = false;
+        input.placeholder = "Ask about " + name.toLowerCase() + "…";
+        updateInput();
+    }
+
+    widget.querySelectorAll(".ai-topic-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            selectTopic(btn.dataset.topic, btn.dataset.name);
+            input.focus();
+        });
+    });
     /* ---------- Topics ---------- */
     function lockInput() {
         input.disabled = true;
@@ -157,13 +174,16 @@
     }
 
     /* ---------- Ask ---------- */
-    async function ask() {
-        const prompt = input.value.trim();
+    async function ask(retryPrompt) {
+        const isRetry = typeof retryPrompt === "string";
+        const prompt = (isRetry ? retryPrompt : input.value).trim();
         if (!prompt || busy || !topicChosen) return;
 
         busy = true;
-        addMessage("user", prompt);
-        input.value = "";
+        if (!isRetry) {
+            addMessage("user", prompt); // a retry reuses the question already on screen
+            input.value = "";
+        }
         updateInput();
 
         // Thinking state
@@ -172,7 +192,8 @@
             '<div class="ai-dots" aria-label="Thinking"><span></span><span></span><span></span></div>';
 
         let reply,
-            failed = false;
+            failed = false,
+            data = {};
 
         try {
             const res = await fetch(API_URL, {
@@ -190,16 +211,17 @@
                 }),
             });
 
-            let data = {};
             try {
                 data = await res.json();
-            } catch {}
+            } catch { }
 
             if (res.ok) {
                 reply = data.response || "No response received.";
-                // Remember this exchange (failed requests are not remembered)
-                chatHistory.push({ role: "user", text: prompt }, { role: "bot", text: reply });
-                chatHistory = chatHistory.slice(-MAX_HISTORY);
+                // Remember this exchange (failed requests and topic suggestions are not remembered)
+                if (!data.suggestTopic) {
+                    chatHistory.push({ role: "user", text: prompt }, { role: "bot", text: reply });
+                    chatHistory = chatHistory.slice(-MAX_HISTORY);
+                }
             } else {
                 failed = true;
                 // accept { error: "text" } or { error: { message: "text" } }
@@ -217,6 +239,61 @@
 
         thinking.bubble.textContent = reply;
         if (failed) thinking.row.classList.add("error");
+
+        // Borderline match in another topic: offer to switch and ask again
+        if (!failed && topicsEnabled && data.suggestTopic) {
+            const target = widget.querySelector(
+                '.ai-topic-btn[data-topic="' + CSS.escape(String(data.suggestTopic)) + '"]'
+            );
+            if (target) {
+                const note = document.createElement("div");
+                note.className = "ai-topic-note";
+
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = "Switch to " + target.dataset.name + " and ask again";
+                btn.addEventListener("click", () => {
+                    if (busy) return;
+                    selectTopic(target.dataset.topic, target.dataset.name);
+                    note.remove();
+                    ask(prompt);
+                });
+
+                note.append(btn);
+                thinking.bubble.append(note);
+            }
+        }
+
+        // Confident answer from another topic: say where it came from
+        if (
+            !failed &&
+            topicsEnabled &&
+            currentTopic &&
+            data.fromTopic &&
+            String(data.fromTopic) !== String(currentTopic)
+        ) {
+            const target = widget.querySelector(
+                '.ai-topic-btn[data-topic="' + CSS.escape(String(data.fromTopic)) + '"]'
+            );
+            if (target) {
+                const note = document.createElement("div");
+                note.className = "ai-topic-note";
+                note.append("From " + target.dataset.name + ". ");
+
+                const link = document.createElement("button");
+                link.type = "button";
+                link.textContent = "Switch to this topic";
+                link.addEventListener("click", () => {
+                    selectTopic(target.dataset.topic, target.dataset.name);
+                    note.remove();
+                    input.focus();
+                });
+
+                note.append(link);
+                thinking.bubble.append(note);
+            }
+        }
+
         messages.scrollTop = messages.scrollHeight;
 
         busy = false;

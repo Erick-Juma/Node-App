@@ -56,7 +56,7 @@ function hashContent(title, cleanBody) {
     .digest("hex");
 }
 
-export async function ingestArticle({ id, title, body, project }, { force = false } = {}) {
+export async function ingestArticle({ id, title, body, topic, project }, { force = false } = {}) {
   const sourceUrl = `laravel-article-${id}`;
   const cleanBody = stripHtml(body || "");
   const contentHash = hashContent(title, cleanBody);
@@ -67,9 +67,15 @@ export async function ingestArticle({ id, title, body, project }, { force = fals
       "SELECT id, content_hash FROM knowledge_articles WHERE project = $1 AND source_url = $2",
       [project, sourceUrl]
     );
-    if (rows[0]?.content_hash === contentHash) {
-      return { articleId: rows[0].id, skipped: true };
+    const existing = rows[0];
+    if (existing?.content_hash === contentHash) {
+      if ((existing.topic ?? null) !== (topic ?? null)) {
+        await db.query("UPDATE knowledge_articles SET topic = $1 WHERE id = $2", [topic ?? null, existing.id]);
+        await db.query("UPDATE knowledge_chunks SET topic = $1 WHERE article_id = $2", [topic ?? null, existing.id]);
+      }
+      return { articleId: existing.id, skipped: true };
     }
+
   }
 
   const chunks = chunkText(cleanBody);
@@ -96,18 +102,19 @@ export async function ingestArticle({ id, title, body, project }, { force = fals
     );
 
     const { rows } = await client.query(
-      `INSERT INTO knowledge_articles (source_url, title, project, content_hash)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
-      [sourceUrl, title, project, contentHash]
+      `INSERT INTO knowledge_articles (source_url, title, project, content_hash, topic)
+      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [sourceUrl, title, project, contentHash, topic ?? null]
     );
+
     const articleId = rows[0].id;
 
     for (let i = 0; i < chunks.length; i++) {
       await client.query(
         `INSERT INTO knowledge_chunks
-           (article_id, chunk_index, chunk_text, embedding, project, embedding_model, embedding_dim)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [articleId, i, chunks[i], JSON.stringify(embeddings[i]), project, MODEL_TAG, embeddings[i].length]
+          (article_id, chunk_index, chunk_text, embedding, project, embedding_model, embedding_dim, topic)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [articleId, i, chunks[i], JSON.stringify(embeddings[i]), project, MODEL_TAG, embeddings[i].length, topic ?? null]
       );
     }
 

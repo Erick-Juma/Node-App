@@ -8,12 +8,13 @@ import { chatLimiter } from "../../middleware/chatLimiter.js";
 const router = express.Router();
 
 let PROJECT = null;
+let TOPIC = null;
 
 const MSG_URL = `${process.env.APP_URL}/api/saveMessage`;
 
 router.post("/chat/erevuka-assistant", chatLimiter, async (req, res) => {
 
-  const { prompt, aiConfigs } = req.body;
+  const { prompt, aiConfigs, topic } = req.body;
   const { platform, username } = aiConfigs || {};
 
   if (platform ==="chat application"){
@@ -21,6 +22,7 @@ router.post("/chat/erevuka-assistant", chatLimiter, async (req, res) => {
   }
   else {
     PROJECT = platform;
+    TOPIC = topic;
   }
 
   if (!prompt) {
@@ -64,48 +66,78 @@ router.post("/chat/erevuka-assistant", chatLimiter, async (req, res) => {
       `Embedding: ${Date.now() - embeddingStart}ms`
     );
 
-    const dbStart = Date.now();
 
-    const { rows: matches } = await db.query(
-      `SELECT
-        id,
-        article_id,
-        chunk_text,
-        project,
-        1 - (embedding <=> $1) AS similarity
+const MIN_SIMILARITY = 0.55; // your hits scored 0.87, a miss scored 0.34; tune as you add content
+const STRONG_SIMILARITY = 0.75; // tune with your Gemini scores
+
+const TOPIC = req.body.topic ? String(req.body.topic) : null;
+
+console.log(TOPIC);
+
+const SEARCH_SQL = `
+  SELECT id, article_id, chunk_text, project, topic,
+         1 - (embedding <=> $1) AS similarity
     FROM knowledge_chunks
-    WHERE project = $2
-    ORDER BY embedding <=> $1
-    LIMIT 5`,
-      [JSON.stringify(queryEmbedding), PROJECT]
-    );
+   WHERE project = $2
+     AND ($3::text IS NULL OR topic = $3::text)
+   ORDER BY embedding <=> $1
+   LIMIT 5`;
 
-    console.log(
-      `PostgreSQL: ${Date.now() - dbStart}ms`
-    );
+  const vec = JSON.stringify(queryEmbedding);
+  const dbStart = Date.now();
 
+  const { rows: matches } = await db.query(SEARCH_SQL, [vec, PROJECT, TOPIC]);
+  let relevant = matches.filter((m) => Number(m.similarity) >= MIN_SIMILARITY);
+  let fromTopic = null;
 
-    const context = matches
-      .map(m => m.chunk_text)
-      .join("\n\n");
+  matches.map((m) => ({
+    id: m.id,
+    article_id: m.article_id,
+    topic: m.topic,
+    similarity: Number(m.similarity).toFixed(3),
+  }))
 
-    console.log("RAG matches:", matches);
+  if (relevant.length === 0 && TOPIC) {
+    const { rows: all } = await db.query(SEARCH_SQL, [vec, PROJECT, null]);
+    const best = all[0];
+    const bestSim = best ? Number(best.similarity) : 0;
 
+    if (bestSim >= STRONG_SIMILARITY) {
+      // confident: answer from the other topic
+      relevant = all.filter((m) => Number(m.similarity) >= MIN_SIMILARITY);
+      fromTopic = best.topic;
+    } else if (bestSim >= MIN_SIMILARITY) {
+      // borderline: let the user decide
+      return res.json({
+        response: "That doesn't look like it's in the selected topic, but it may be covered in another one.",
+        suggestTopic: best.topic,
+      });
+    }
+  }
 
-    const systemPrompt = `
-You are a customer support assistant for Erevuka.
+  if (relevant.length === 0) {
+    return res.json({
+      response:
+        "I don't have enough information to answer that. Try rephrasing your question, or choose All topics.",
+    });
+  }
 
-Answer using ONLY the provided context.
-Be clear and concise. You may rephrase the context.
-Do not guess or add unsupported information.
-If the context does not contain the answer, say:
-"I don't have enough information to answer that."
+  // console.log("fromTopic:", fromTopic, "TOPIC:", TOPIC);
 
-Context:
-${context}
-`;
+  const context = relevant.map((m) => m.chunk_text).join("\n\n");
 
+  const systemPrompt = `
+  You are a customer support assistant for Erevuka.
 
+  Answer using ONLY the provided context.
+  Be clear and concise. You may rephrase the context.
+  Do not guess or add unsupported information.
+  If the context does not contain the answer, say:
+  "I don't have enough information to answer that."
+
+  Context:
+  ${context}
+  `;
 
     const answer = await generateAnswer({
       systemPrompt,
@@ -115,11 +147,12 @@ ${context}
     console.log(`Total: ${Date.now() - dbStart}ms`);
 
     return res.status(200).json({
-      response: answer
+      response: answer,
+      fromTopic,
     });
 
   } catch (err) {
-    console.error("Error in project assistant:", err);
+    // console.error("Error in project assistant:", err);
 
     const status = err.status || err.code;
 

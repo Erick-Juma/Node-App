@@ -3,6 +3,8 @@ import { generateEmbedding as generateGeminiEmbedding } from "./gemini.js";
 
 const provider = process.env.EMBEDDING_PROVIDER || "ollama";
 
+console.log(`Using embedding provider: ${provider}`);
+
 export async function generateEmbedding(text) {
 switch (provider) {
 case "ollama":

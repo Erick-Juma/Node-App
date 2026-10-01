@@ -198,7 +198,10 @@
         try {
             const res = await fetch(API_URL, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Assistant-Token": aiConfigs.token || "", // signed by Laravel, verified by Node
+                },
                 credentials: "include", // send the session cookie so per-session rate limiting works
                 body: JSON.stringify({
                     message: prompt, // what /api/chat/erevuka-assistant reads
@@ -278,7 +281,7 @@
             if (target) {
                 const note = document.createElement("div");
                 note.className = "ai-topic-note";
-                note.append("From " + target.dataset.name + ". ");
+                note.append("Found in " + target.dataset.name + ". ");
 
                 const link = document.createElement("button");
                 link.type = "button";

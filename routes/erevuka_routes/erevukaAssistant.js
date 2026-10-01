@@ -4,6 +4,7 @@ import { db } from "../../config/db.js";
 import { generateEmbedding } from "../../services/embedding/index.js";
 import { generateAnswer } from "../../services/llm/index.js";
 import { chatLimiter } from "../../middleware/chatLimiter.js";
+import { verifyAssistantToken } from "../../middleware/verifyAssistantToken.js";
 
 const router = express.Router();
 
@@ -12,10 +13,14 @@ let TOPIC = null;
 
 const MSG_URL = `${process.env.APP_URL}/api/saveMessage`;
 
-router.post("/chat/erevuka-assistant", chatLimiter, async (req, res) => {
+router.post("/chat/erevuka-assistant", verifyAssistantToken, chatLimiter, async (req, res) => {
 
   const { prompt, aiConfigs, topic } = req.body;
-  const { platform, username } = aiConfigs || {};
+  const { platform } = aiConfigs || {};
+
+  const username = req.userId;
+
+  console.log(username);
 
   if (platform ==="chat application"){
     PROJECT = "aki";

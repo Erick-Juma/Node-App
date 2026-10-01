@@ -39,6 +39,8 @@ const corsOptions = {
     }
   },
   credentials: true,
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "X-Assistant-Token"],
 };
 // === Middleware ===
 app.use(cors(corsOptions));
@@ -72,8 +74,9 @@ app.use("/api", erevukaRoutes);
 app.use("/api", akiRoutes);
 app.use("/api", messageRoutes);
 app.use("/api", userRoutes);
-app.use("/api", erevukaAssistantRoutes);
 app.use("/api", ingestRoutes);
+app.use("/api", erevukaAssistantRoutes);
+
 
 // === Root route ===
 app.get("/", (req, res) => {

@@ -1,0 +1,344 @@
+<?php
+
+namespace App\Http\Controllers\Twill;
+
+use A17\Twill\Enums\PermissionLevel;
+use A17\Twill\Facades\TwillPermissions;
+use A17\Twill\Http\Controllers\Admin\UserController as TwillUserController;
+use A17\Twill\Models\Contracts\TwillModelContract;
+use A17\Twill\Models\ModelInterface;
+use A17\Twill\Models\Permission;
+use A17\Twill\Repositories\ModuleRepository;
+use A17\Twill\Services\Listings\Columns\Image;
+use A17\Twill\Services\Listings\Columns\Text;
+use A17\Twill\Services\Listings\Filters\QuickFilter;
+use A17\Twill\Services\Listings\Filters\QuickFilters;
+use A17\Twill\Services\Listings\TableColumns;
+use App\Models\Company;
+use App\Repositories\UserRepository;
+use Illuminate\Config\Repository as Config;
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use PragmaRX\Google2FA\Exceptions\IncompatibleWithGoogleAuthenticatorException;
+use PragmaRX\Google2FA\Exceptions\InvalidCharactersException;
+
+class UserController extends TwillUserController
+{
+    /**
+     * @var Config
+     */
+    protected $config;
+
+    /**
+     * @var AuthFactory
+     */
+    protected $authFactory;
+
+    /**
+     * @var string
+     */
+    protected $namespace = 'A17\Twill';
+
+    /**
+     * @var string
+     */
+    protected $moduleName = 'users';
+
+    /**
+     * @var string[]
+     */
+    protected $indexWith = ['medias'];
+
+    /**
+     * @var array
+     */
+    protected $defaultOrders = ['name' => 'asc'];
+
+    /**
+     * @var array
+     */
+    protected $filters = [];
+
+    /**
+     * @var string
+     */
+    protected $titleColumnKey = 'name';
+
+    /**
+     * @var array
+     */
+    protected $indexOptions = [
+        'permalink' => false,
+    ];
+
+    /**
+     * @var array
+     */
+    protected $fieldsPermissions = [
+        'role' => 'manage-users',
+    ];
+
+    public function getIndexTableColumns(): TableColumns
+    {
+        $tableColumns = TableColumns::make();
+        if ($this->config->get('twill.enabled.users-image')) {
+            $tableColumns->add(
+                Image::make()
+                    ->field('image')
+                    ->title('Image')
+                    ->rounded()
+            );
+        }
+
+        $tableColumns->add(
+            Text::make()
+                ->field($this->titleColumnKey)
+                ->linkToEdit()
+                ->sortable(),
+        );
+        $tableColumns->add(
+            Text::make()
+                ->field('last_login_at')
+                ->title('Last Login')
+                ->customRender(function (TwillModelContract $user) {
+                    return $user->last_login_at ? $user->last_login_at->ago() : '-';
+                })
+                ->sortable()
+        );
+        $tableColumns->add(
+            Text::make()
+                ->field('email')
+                ->title('Email')
+                ->sortable()
+        );
+        $tableColumns->add(
+            Text::make()
+                ->field(twillModel('user')::getRoleColumnName())
+                ->title('Role')
+                ->customRender(function (TwillModelContract $user) {
+                    if (TwillPermissions::enabled()) {
+                        return Str::title($user->role->name);
+                    }
+
+                    return Str::title($user->role);
+                })
+                ->sortable()
+        );
+
+        return $tableColumns;
+    }
+
+    public function setUpController(): void
+    {
+        $this->setSearchColumns(['name', 'email']);
+    }
+
+    /**
+     * @param  Request  $request
+     * @return array
+     */
+    protected function indexData($request)
+    {
+        return [
+            'defaultFilterSlug' => 'activated',
+            'create' => $this->getIndexOption('create') && $this->user->can('edit-users'),
+            'roleList' => $this->getRoleList(),
+        ];
+    }
+
+    protected function getIndexItems(array $scopes = [], bool $forcePagination = false)
+    {
+        if (TwillPermissions::enabled()) {
+            $scopes += ['accessible' => true];
+        }
+
+        return parent::getIndexItems($scopes, $forcePagination);
+    }
+
+    /**
+     * @param  Request  $request
+     * @return array
+     *
+     * @throws IncompatibleWithGoogleAuthenticatorException
+     * @throws InvalidCharactersException
+     */
+    protected function formData($request)
+    {
+        $currentUser = $this->authFactory->guard('twill_users')->user();
+        $with2faSettings = $this->config->get('twill.enabled.users-2fa') && $currentUser->id == $request->route('user');
+
+        if ($with2faSettings) {
+            $currentUser->generate2faSecretKey();
+
+            $qrCode = $currentUser->get2faQrCode();
+        }
+
+        // Get user thumbnail (fixme because this always return the fallback blank image)
+        if ($this->config->get('twill.enabled.users-image')) {
+            $user = $this->repository->getById($request->route('user'));
+            $role = head(array_keys($user->mediasParams));
+            $crop = head(array_keys(head($user->mediasParams)));
+            $params = ['w' => 100, 'h' => 100];
+            $titleThumbnail = $user->cmsImage($role, $crop, $params);
+        }
+
+        if (TwillPermissions::levelIs(PermissionLevel::LEVEL_ROLE_GROUP_ITEM)) {
+            $permissionsData = [
+                'permissionModules' => $this->getPermissionModules(),
+            ];
+        }
+
+        $isHr = $currentUser->role_value === 'Company HR' || $currentUser->is_company_admin === 1 || $currentUser->role_id === 3;
+
+        $companyOptions = collect($isHr ? Company::published()->where('id', $currentUser->company_id)->pluck('title', 'id')->toArray() : Company::published()->pluck('title', 'id')->toArray())->map(function ($item, $key) {
+            return ['value' => $key, 'label' => $item];
+        })->values()->toArray();
+
+        return [
+            'companyList' => $companyOptions,
+            'roleList' => $this->getRoleList(),
+            'titleThumbnail' => $titleThumbnail ?? null,
+            'with2faSettings' => $with2faSettings,
+            'qrCode' => $qrCode ?? null,
+            'groupPermissionMapping' => $this->getGroupPermissionMapping(),
+            'groupOptions' => $this->getGroups(),
+        ] + ($permissionsData ?? []);
+    }
+
+    protected function getRequestFilters(): array
+    {
+        if ($this->request->has('search')) {
+            return ['search' => $this->request->get('search')];
+        }
+
+        return json_decode($this->request->get('filter'), true) ?? ['status' => 'activated'];
+    }
+
+    protected function getDefaultQuickFilters(): QuickFilters
+    {
+        if (config('twill.enabled.permissions-management')) {
+            $roleScope = ['is_superadmin', false];
+        } else {
+            $roleScope = ['role', '<>', 'SUPERADMIN'];
+        }
+
+        $filters = QuickFilters::make([
+            QuickFilter::make()
+                ->label(twillTrans('twill::lang.user-management.active'))
+                ->queryString('activated')
+                ->scope('activated')
+                ->amount(fn () => $this->repository->getCountByStatusSlug('activated', [$roleScope])),
+            QuickFilter::make()
+                ->label(twillTrans('twill::lang.user-management.pending'))
+                ->queryString('pending')
+                ->scope('pending')
+                ->amount(fn () => $this->repository->getCountByStatusSlug('pending', [$roleScope])),
+            QuickFilter::make()
+                ->label(twillTrans('twill::lang.user-management.disabled'))
+                ->queryString('draft')
+                ->scope('draft')
+                ->amount(fn () => $this->repository->getCountByStatusSlug('draft', [$roleScope])),
+        ]);
+
+        if ($this->getIndexOption('restore')) {
+            $filters->add(
+                QuickFilter::make()
+                    ->label(twillTrans('twill::lang.user-management.trash'))
+                    ->queryString('trash')
+                    ->scope('onlyTrashed')
+                    ->amount(fn () => $this->repository->getCountByStatusSlug('trash', [$roleScope])),
+            );
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param  string  $option
+     * @return bool
+     */
+    protected function getIndexOption($option, $item = null)
+    {
+        if (in_array($option, ['publish', 'bulkEdit', 'create'])) {
+            return $this->authFactory->guard('twill_users')->user()->can('edit-users');
+        }
+
+        return parent::getIndexOption($option);
+    }
+
+    /**
+     * @param  ModelInterface  $item
+     * @return array
+     */
+    protected function indexItemData($item)
+    {
+        $canEdit = $this->user->can('edit-users');
+
+        return ['edit' => $canEdit ? $this->getModuleRoute($item->id, 'edit') : null];
+    }
+
+    public function edit(int|TwillModelContract $id): mixed
+    {
+        $this->authorizableOptions['edit'] = 'edit-user';
+
+        return parent::edit($id);
+    }
+
+    public function update(int|TwillModelContract $id, ?int $submoduleId = null): JsonResponse
+    {
+        $this->authorizableOptions['edit'] = 'edit-user';
+
+        return parent::update($id, $submoduleId);
+    }
+
+    private function getGroupPermissionMapping()
+    {
+        if (config('twill.enabled.permissions-management')) {
+            return twillModel('group')::with('permissions')->get()
+                ->mapWithKeys(function ($group) {
+                    return [$group->id => $group->permissions];
+                })->toArray();
+        }
+
+        return [];
+    }
+
+    private function getGroups()
+    {
+        if (config('twill.enabled.permissions-management')) {
+            // Forget first one because it's the "Everyone" group and we don't want to show it inside admin.
+            return twillModel('group')::with('permissions')->pluck('name', 'id')->forget(1);
+        }
+
+        return [];
+    }
+
+    private function getRoleList()
+    {
+        if (config('twill.enabled.permissions-management')) {
+            return twillModel('role')::accessible()->published()->get()->map(function ($role) {
+                return ['value' => $role->id, 'label' => $role->name];
+            })->toArray();
+        }
+
+        return collect(TwillPermissions::roles()::toArray())->map(function ($item, $key) {
+            return ['value' => $key, 'label' => $item];
+        })->values()->toArray();
+    }
+
+    private function getPermissionModules()
+    {
+        if (config('twill.enabled.permissions-management')) {
+            return Permission::permissionableParentModuleItems();
+        }
+
+        return [];
+    }
+
+    protected function getRepository(): ModuleRepository
+    {
+        return app(UserRepository::class);
+    }
+}

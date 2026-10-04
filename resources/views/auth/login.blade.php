@@ -20,7 +20,7 @@
                     @submit="loading = true">
                     @csrf
 
-                    <x-form.input name="email" label="Email" required autofocus autocomplete="email" placeholder="SLBA000" />
+                    <x-form.input name="email" label="Username" required autofocus autocomplete="email" placeholder="SLBA000" />
 
                     <div class="mb-6">
                         <label for="password" class="mb-1 block text-sm text-gray-700">Password</label>

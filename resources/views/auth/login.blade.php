@@ -14,7 +14,7 @@
         <div class="flex items-center justify-center bg-gray-100 p-4">
             <div class="w-full max-w-md rounded-lg bg-white p-8 text-black shadow-lg">
                 <h2 class="mb-6 text-center text-2xl font-bold text-gray-800">Welcome Back</h2>
-                <h3 class="mb-6 text-center text-md text-gray-800">Sign in to your account to continue.</h3>
+                {{-- <h3 class="mb-6 text-center text-md text-gray-800">Sign in to your account to continue.</h3> --}}
 
                 <form action="{{ route('login.post') }}" method="POST" id="loginForm" x-data="{ show: false, loading: false }"
                     @submit="loading = true">

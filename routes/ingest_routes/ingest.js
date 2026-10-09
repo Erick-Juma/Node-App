@@ -12,14 +12,33 @@ function requireIngestKey(req, res, next) {
 }
 
 router.post("/ingest/article", requireIngestKey, async (req, res) => {
-  const { id, title, body, topic, project } = req.body;
+  // Laravel sends snake_case
+  const { id, title, body, topic, topic_title, alternate_phrasings, project } = req.body;
 
   if (!id || !title || !body || !project || !topic) {
     return res.status(400).json({ error: "id, title, topic, body, and project are required." });
   }
 
+  const phrasings = Array.isArray(alternate_phrasings)
+    ? alternate_phrasings
+      .filter((p) => typeof p === "string")
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .slice(0, 25)
+    : [];
+
   try {
-    const result = await ingestArticle({ id, title, body, topic, project });
+    // ingestArticle expects camelCase: map explicitly, never shorthand
+    const result = await ingestArticle({
+      id,
+      title,
+      body,
+      topic,
+      topicTitle: topic_title || null,
+      alternatePhrasings: phrasings,
+      project,
+    });
+    console.log("ingest result:", id, result);
     return res.status(200).json({ message: "Article ingested", ...result });
   } catch (err) {
     console.error("Error ingesting article:", err);

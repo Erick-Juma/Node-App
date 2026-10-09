@@ -124,12 +124,6 @@
         updateInput();
     }
 
-    widget.querySelectorAll(".ai-topic-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            selectTopic(btn.dataset.topic, btn.dataset.name);
-            input.focus();
-        });
-    });
     /* ---------- Topics ---------- */
     function lockInput() {
         input.disabled = true;
@@ -141,16 +135,10 @@
     if (topicsEnabled) {
         lockInput();
 
+        // One handler per topic button (selectTopic does the state changes)
         widget.querySelectorAll(".ai-topic-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
-                currentTopic = btn.dataset.topic || null;
-                topicChosen = true;
-                topicLabel.textContent = btn.dataset.name;
-                topicBar.hidden = false;
-                if (empty) empty.hidden = true;
-                input.disabled = false;
-                input.placeholder = "Ask about " + btn.dataset.name.toLowerCase() + "…";
-                updateInput();
+                selectTopic(btn.dataset.topic, btn.dataset.name);
                 input.focus();
             });
         });
@@ -209,7 +197,8 @@
                     topic: currentTopic, // topic id as a string, or null for all topics
                     history: chatHistory,
                     sessionId,
-                    aiConfigs,
+                    // Only what the backend reads; the token already travels in the header
+                    aiConfigs: { platform: aiConfigs.platform },
                     context: window.ASK_AI_CONTEXT || null, // e.g. { courseId, courseTitle }, read at send time
                 }),
             });

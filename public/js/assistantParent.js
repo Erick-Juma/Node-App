@@ -1,9 +1,21 @@
-
 const aiConfigElement = document.getElementById("assistant-config");
 
 const aiConfigs = JSON.parse(aiConfigElement.textContent);
 
 const API_URL = aiConfigs.api_url;
+const TOKEN_URL = aiConfigs.token_url || "/api/assistant-token";
+
+/* Signed token from the Node server; the gateway reads the user and platform from it */
+let assistantToken = null;
+
+async function getToken(force = false) {
+    if (!assistantToken || force) {
+        const r = await fetch(TOKEN_URL, { credentials: "same-origin" });
+        if (!r.ok) throw new Error("Could not get assistant token");
+        assistantToken = (await r.json()).token;
+    }
+    return assistantToken;
+}
 
 const $ = (id) => document.getElementById(id);
 const widget = $("aiWidget"), chat = $("aiChat"), launcher = $("aiLauncher");
@@ -95,17 +107,22 @@ async function ask() {
     let reply, failed = false;
 
     try {
-        const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                prompt,
-                history: chatHistory,
-                sessionId,
-                aiConfigs: aiConfigs,
-                context: window.ASK_AI_CONTEXT || null   // e.g. { courseId, courseTitle }, read at send time
-            })
+        const body = JSON.stringify({
+            prompt,
+            history: chatHistory,
+            sessionId,
+            context: window.ASK_AI_CONTEXT || null   // e.g. { courseId, courseTitle }, read at send time
         });
+
+        const post = (token) => fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Assistant-Token": token },
+            body
+        });
+
+        let res = await post(await getToken());
+        if (res.status === 401) res = await post(await getToken(true));   // token expired: get a fresh one, retry once
+
         let data = {};
         try { data = await res.json(); } catch { }
         if (res.ok) {

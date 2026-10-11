@@ -3,7 +3,7 @@ import express from 'express';
 import generateOllamaContent from './ollamaHandler.js';
 import generateContent from './akiHandler.js';
 import { chatLimiter, ipMinuteLimiter, ipDailyLimiter } from '../../middleware/chatLimiter.js';
-import { verifyAssistantToken } from '../../middleware/verifyAssistantToken.js';
+import { optionalAssistantToken } from "../../middleware/verifyAssistantToken.js";
 
 const router = express.Router();
 
@@ -24,22 +24,12 @@ if (!handler) {
 
 // Token check in "soft" mode until the live app sends X-Assistant-Token.
 // Set ASK_AI_ENFORCE_TOKEN=true to require it.
-const ENFORCE_TOKEN = process.env.ASK_AI_ENFORCE_TOKEN === 'true';
-
-function optionalAssistantToken(req, res, next) {
-    if (req.get('X-Assistant-Token')) return verifyAssistantToken(req, res, next);
-    if (ENFORCE_TOKEN) {
-        return res.status(401).json({ error: 'Your session has expired. Please refresh the page and try again.' });
-    }
-    console.warn('Ask AI request without token from', req.get('origin') || req.ip);
-    next();
-}
 
 router.post(
     '/chat/aki',
     ipDailyLimiter,         // cap per IP per day
     ipMinuteLimiter,        // cap per IP per minute
-    optionalAssistantToken, // verify if present; enforce later
+    optionalAssistantToken("ASK_AI_ENFORCE_TOKEN", { warn: true }),
     chatLimiter,            // cap per session per minute
     handler
 );

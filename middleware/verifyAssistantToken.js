@@ -24,12 +24,36 @@ function verifyToken(token) {
   return ok ? { uid, platform } : null;
 }
 
+const EXPIRED = { error: "Your session has expired. Please refresh the page and try again." };
+
+// Required: used by the platform assistant
 export function verifyAssistantToken(req, res, next) {
   const claims = verifyToken(req.get("X-Assistant-Token"));
-  if (!claims) {
-    return res.status(401).json({ error: "Your session has expired. Please refresh the page and try again." });
-  }
+  if (!claims) return res.status(401).json(EXPIRED);
   req.userId = claims.uid;
   req.platform = claims.platform; // trusted: covered by the signature
   next();
+}
+
+// Optional: verifies a token if one is sent; without one, only rejects
+// when the route's own flag (e.g. ASK_AI_ENFORCE_TOKEN=true) is on.
+export function optionalAssistantToken(enforceFlag, { warn = false } = {}) {
+  return (req, res, next) => {
+    const token = req.get("X-Assistant-Token");
+
+    if (token) {
+      const claims = verifyToken(token);
+      if (!claims) return res.status(401).json(EXPIRED);   // a bad token is always rejected
+      req.userId = claims.uid;
+      req.platform = claims.platform;
+      return next();
+    }
+
+    if (enforceFlag && process.env[enforceFlag] === "true") {
+      return res.status(401).json(EXPIRED);
+    }
+
+    if (warn) console.warn(`No assistant token on ${req.method} ${req.originalUrl}`);
+    next();
+  };
 }

@@ -42,6 +42,7 @@ const SEARCH_SQL = `
    ORDER BY b.similarity DESC`;
 
 router.post("/chat/erevuka-assistant", verifyAssistantToken, chatLimiter, async (req, res) => {
+  console.log("assistant body:", JSON.stringify(req.body));
   const { prompt, topic } = req.body;
   const platform = req.platform; // from the signed token, not the request body
   const username = req.userId;

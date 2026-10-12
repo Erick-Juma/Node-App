@@ -3,11 +3,13 @@
 const configElement = document.getElementById("chat-config");
 let platform = "AKI";
 let username = "AKI Admin";
+let API_BASE = "https://api.erevuka.org";
 
 if (configElement) {
   try {
     const config = JSON.parse(configElement.textContent || "{}");
     platform = config.platform_id ?? platform;
+    API_BASE = config.api_base ?? API_BASE;
     if (config.user_name != null && config.user_name !== "null") {
       username = config.user_name;
     }
@@ -55,7 +57,7 @@ const createChatLi = (message, className) => {
 
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
-  const API_URL = `${window.location.origin}/api/chat/aki`;
+  const API_URL = `${API_BASE}/api/chat/aki`;
 
   try {
     const response = await fetch(API_URL, {
@@ -100,7 +102,7 @@ const handleChat = async () => {
   isSending = true;
   sendChatBtn.style.pointerEvents = "none";
 
-  const MSG_URL = `${window.location.origin}/api/saveMessage`;
+  const MSG_URL = `${API_BASE}/api/saveMessage`;
 
   try {
     const response = await fetch(MSG_URL, {

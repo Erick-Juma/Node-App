@@ -15,6 +15,7 @@ const MAX_CONTEXT_CHARS = 6000;
 
 function toPlainText(text) {
   return String(text || "")
+    .replace(/^\s*\*\s+/gm, "- ")           // "* item" -> "- item"
     .replace(/\*\*(.+?)\*\*/g, "$1")
     .replace(/__(.+?)__/g, "$1")
     .replace(/^#{1,6}\s+/gm, "")
